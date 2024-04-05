@@ -1,0 +1,14 @@
+TITLE=Profile Switcher
+COL_TITLE=#F8E008
+COL_BACK=#0D0803
+COL_SELECT=#FEFEFE
+COL_DATETIME=#ABABAB
+
+P1_COMMAND=/mnt/mmc/CFW/profile/profile.sh P1
+P1_DISABLED=0
+
+P2_COMMAND=/mnt/mmc/CFW/profile/profile.sh P2
+P2_DISABLED=0
+
+P3_COMMAND=/mnt/mmc/CFW/profile/profile.sh P3
+P3_DISABLED=0

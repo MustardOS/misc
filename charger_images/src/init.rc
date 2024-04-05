@@ -1,0 +1,218 @@
+on early-init
+    sysclktz 0
+    loglevel 7
+
+    #export SDL_NOMOUSE 1
+    export PATH /sbin:/vendor/bin:/mnt/sdcard/bin:/system/bin:/system/usr/bin
+    export LD_LIBRARY_PATH /mnt/sdcard/lib:/vendor/lib:/system/lib:/system/usr/lib
+    
+# set RLIMIT_NICE to allow priorities from 19 to -20
+    setrlimit 13 40 40
+
+    # Set init and its forked children's oom_adj.
+    write /proc/1/oom_adj -16
+
+    # disable suspend for test
+    #write /sys/power/wake_lock 1
+    
+    # fixme: disable hotplug by now
+    write /sys/devices/system/cpu/autoplug/lock 1
+
+    # use legacy virtual memory layout for compatibility
+    write /proc/sys/vm/legacy_va_layout 0
+
+    # create rootfs dir
+    mkdir /data 0777 system system
+    mkdir /data/property 0700 root root
+    
+    # linker debug
+    #export LD_DEBUG 1
+
+    # bootchart debug
+    #write  /data/bootchart-start 5
+
+    start ueventd
+
+    # create block symlink
+    wait /dev/block/mmcblk0
+    symlink /dev/block/mmcblk0p1   /dev/block/actb
+    symlink /dev/block/mmcblk0p2   /dev/block/actc
+	#FACTORY --> mmcblk0p4
+	#OTA
+    #symlink /dev/block/mmcblk0p5   /dev/block/acte
+	#CONFIG
+    #symlink /dev/block/mmcblk0p6   /dev/block/actk
+	#symlink /sys/class/block/mmcblk0p6/size   /dev/block/actk-size
+	#udisk
+    #symlink /dev/block/mmcblk0p7   /dev/block/actj
+	
+	#allen change CONFIG 
+    symlink /dev/block/mmcblk0p3   /dev/block/actk
+	symlink /sys/class/block/mmcblk0p3/size   /dev/block/actk-size
+	
+    # mount disks
+    mkdir /misc
+    wait /dev/block/actb
+    mount vfat /dev/block/actb /misc ro wait noatime nodiratime umask=0022
+
+    # adckey
+    insmod /misc/modules/gpio_keys_polled.ko
+    #insmod /misc/modules/atc260x-adckeypad.ko
+    #insmod /misc/modules/atc260x-irkeypad.ko
+    
+    # mount disks	
+    mkdir /system
+    wait /dev/block/actc    
+    #mount squashfs /dev/block/actc /system
+    mount ext4 /dev/block/actc /system ro noatime nodiratime nodev noauto_da_alloc
+    mount debugfs none /sys/kernel/debug
+    
+    # Backward compatibility
+    symlink /system/etc /etc
+    symlink /sys/kernel/debug /d
+    #symlink /system/vendor /vendor
+
+    #allen set max cpufreq
+    #write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor performance
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor powersave
+
+    symlink /dev/graphics/fb0 /dev/fb0
+    symlink /dev/graphics/fb1 /dev/fb1
+	
+    mkdir /mnt 0777 system system
+    mkdir /mnt/mmc 0777 system system
+    mkdir /mnt/sdcard 0777 system system
+    #mkdir /mnt/external 0777 system system
+
+    # mount ota disk
+    #mkdir /mnt/ota 0777 system system
+    #mount ext4 /dev/block/acte /mnt/ota rw noatime nodiratime nodev noauto_da_alloc
+
+    # mount data disk
+    wait /dev/block/actk
+    mkdir /mnt/data 0777 system system
+    mount ext4 /dev/block/actk /mnt/data rw noatime nodiratime nosuid nodev noauto_da_alloc nodelalloc,discard
+	
+	#allen add vendor
+	#mkdir /mnt/vendor 0777 system system
+	symlink /system/appres /mnt/vendor
+	
+    # create basic filesystem structure
+    mkdir /data 0771 system system
+    mkdir /data/misc 01771 system misc
+    mkdir /data/setting 0771 system system
+
+    # mount swap
+    #swapon_all /fstab.gs705a
+    
+    # Memory management
+    write /proc/sys/vm/overcommit_memory 1
+    write /proc/sys/vm/min_free_order_shift 4
+    write /proc/sys/vm/min_free_kbytes 1024
+    write /proc/sys/vm/dirty_expire_centisecs 200
+    write /proc/sys/vm/dirty_background_ratio  5
+    
+    # zram
+    #write /proc/sys/vm/page-cluster 0
+    #write /proc/sys/vm/swappiness 100
+
+
+
+on early-boot
+    # low memory
+    setprop system.ram.total 128
+    
+    # start core service
+    class_start core
+
+
+on boot
+    #usb serial
+    write  /data/usb_serialnumber 0123456789ABCDEF
+
+    #start adbd
+    export ADB_TRACE all
+    setprop sys.usb.config adb
+
+    # enable usb monitor detection
+    wait /sys/monitor/usb_port/config/run
+    write /sys/monitor/usb_port/config/run 5
+    # force idpin state to high
+    write /sys/monitor/usb_port/config/idpin_debug 1
+
+    # soft gauge
+    insmod /misc/modules/atc260x_cap_gauge.ko  
+    
+    # tp
+#    insmod /misc/modules/ctp_gsl1680f.ko
+    
+    # camera
+    #insmod /misc/modules/flashlight.ko
+    #insmod /misc/modules/nt99141.ko dual=1
+    #insmod /misc/modules/owl_camera.ko
+    #export OPENBLAS_NUM_THREADS 1
+    
+    # basic network init
+    ifup lo
+    hostname localhost
+    domainname localdomain
+
+    #usb3.0 force host
+    write /sys/monitor/usb_port/config/idpin_debug 0
+    write /sys/monitor/usb_port/config/run 0
+    write /sys/monitor/usb_port/config/usb_con_msg USB_A_IN
+
+    # start main service
+    class_start main
+
+
+# surfaceflinger init done
+on property:service.bootanim.exit=1
+    # ethernet drv
+#    insmod /misc/modules/ethernet.ko
+    # wifi drv and service
+    #insmod /misc/modules/wlan_8189fs.ko 
+    start wifi_reconnect
+    start dns
+
+on property:sys.powerctl=*
+    powerctl ${sys.powerctl}
+
+on property:ro.debuggable=1
+    start console
+
+on charger 
+    # soft gauge
+    insmod /misc/modules/atc260x_cap_gauge.ko 
+    wait /sys/monitor/usb_port/config/run
+    write /sys/monitor/usb_port/config/run 5
+    write /sys/monitor/usb_port/config/run 1
+    class_start charger
+
+service ueventd /sbin/ueventd
+    class core
+    critical
+
+# update system time from rtc
+service hwclock_update /system/bin/busybox hwclock -s
+    class core
+    oneshot
+
+service console /system/bin/sh
+    class core
+    console
+    disabled
+
+service adbd /system/bin/adbd
+    class core
+    disabled
+
+service batteryservice  /charger
+    class charger
+    oneshot
+
+# user app test
+#service fbtest  /system/bin/logwrapper /system/bin/fbtest 320 240 32
+service loadapp /system/bin/logwrapper /loadapp.sh
+    class core
+

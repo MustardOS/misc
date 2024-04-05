@@ -1,0 +1,9 @@
+# Make sure this file is saved as "config.txt" in your theme folder!
+# Modify the variables below to suit your animation.
+
+AUTHOR="adixal"		# This is you! Who made this fantastic theme?
+END_FRAME="128"		# What is the last number in the set of animation images?
+TIMING="0.02"		# Time (in seconds) between frames, default is 20 milliseconds.
+LOOP="1"		# How many times do you want the animation to loop?
+SOUND="true"		# Do you want a boot chime or background music?
+RUMBLE="true"		# Do you want the motor to rumble?

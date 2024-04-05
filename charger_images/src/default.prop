@@ -1,0 +1,13 @@
+ro.secure=0
+ro.debuggable=1
+ro.setupwizard.mode=DISABLE
+persist.sys.timezone=Asia/Shanghai
+persist.sys.strictmode.disable=true
+wifi.supplicant_scan_interval=120
+wifi.interface=wlan0
+ro.allow.mock.location=0
+persist.sys.usb.config=mass_storage,adb
+
+# config lcd rotation
+ro.sf.hwrotation=0
+ro.sf.hdmi_rotation=0

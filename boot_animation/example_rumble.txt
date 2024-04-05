@@ -1,0 +1,20 @@
+# First column is vibration strength from 0-100
+# Second column is how long the rumble will stay on in seconds
+# Third column is how long the vibration motor will turn off before moving to the next line
+
+20 0.25 0
+30 0.25 0
+40 0.25 0
+50 0.25 0
+60 0.25 0
+70 0.25 0
+80 0.25 0
+90 0.25 0
+80 0.25 0
+70 0.25 0
+60 0.25 0
+50 0.25 0
+40 0.25 0
+30 0.25 0
+20 0.25 0
+
